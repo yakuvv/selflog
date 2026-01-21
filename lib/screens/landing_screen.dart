@@ -1,93 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../utils/app_theme.dart';
-import 'timeline_screen.dart';
+import 'dart:ui';
+import '../utils/modern_theme.dart';
+import 'auth_screen.dart';
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _floatingController;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatingController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _floatingController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              ModernTheme.background,
+              ModernTheme.iosPurple.withOpacity(0.1),
+              ModernTheme.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
             children: [
-              const Spacer(),
+              // Animated background particles
+              ...List.generate(3, (index) => _buildFloatingOrb(index)),
 
-              // Logo/Title
-              Text(
-                'SELFLOG',
-                style: Theme.of(context).textTheme.displayLarge,
-              )
-                  .animate()
-                  .fadeIn(duration: 600.ms, delay: 100.ms)
-                  .slideX(begin: -0.2, end: 0),
+              // Main content
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Spacer(flex: 2),
 
-              const SizedBox(height: 16),
+                    // Logo/App name
+                    _buildHeader(),
 
-              Text(
-                'Version control for human decisions',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.textSecondary,
+                    const SizedBox(height: 60),
+
+                    // Feature cards
+                    _buildFeatureCard(
+                      'Immutable',
+                      'Every decision is a commit.\nHistory cannot be rewritten.',
+                      Icons.lock_outline,
+                      ModernTheme.iosBlue,
+                      0,
                     ),
-              )
-                  .animate()
-                  .fadeIn(duration: 600.ms, delay: 300.ms)
-                  .slideX(begin: -0.2, end: 0),
 
-              const SizedBox(height: 48),
+                    const SizedBox(height: 20),
 
-              // Core principles
-              _buildPrinciple(
-                context,
-                'Immutable',
-                'Every decision is a commit. History cannot be rewritten.',
-                0,
-              ),
+                    _buildFeatureCard(
+                      'AI-Powered',
+                      'Agentic analysis of your\nreasoning evolution.',
+                      Icons.psychology_outlined,
+                      ModernTheme.iosPurple,
+                      1,
+                    ),
 
-              const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
-              _buildPrinciple(
-                context,
-                'Analytical',
-                'Pure data-driven reasoning. No advice, only diffs.',
-                1,
-              ),
+                    _buildFeatureCard(
+                      'Voice Notes',
+                      'Capture thoughts instantly\nwith voice recording.',
+                      Icons.mic_none,
+                      ModernTheme.iosIndigo,
+                      2,
+                    ),
 
-              const SizedBox(height: 24),
+                    const Spacer(flex: 3),
 
-              _buildPrinciple(
-                context,
-                'Traceable',
-                'Track confidence, constraints, and reasoning evolution.',
-                2,
-              ),
+                    // CTA Button
+                    _buildCTAButton(),
 
-              const Spacer(),
-
-              // CTA Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const TimelineScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text('ENTER TIMELINE'),
+                    const SizedBox(height: 40),
+                  ],
                 ),
-              )
-                  .animate()
-                  .fadeIn(duration: 600.ms, delay: 800.ms)
-                  .slideY(begin: 0.3, end: 0)
-                  .scale(begin: const Offset(0.8, 0.8)),
-
-              const SizedBox(height: 24),
+              ),
             ],
           ),
         ),
@@ -95,41 +109,177 @@ class LandingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPrinciple(
-    BuildContext context,
+  Widget _buildFloatingOrb(int index) {
+    return AnimatedBuilder(
+      animation: _floatingController,
+      builder: (context, child) {
+        return Positioned(
+          top: 100 + (index * 200) + (_floatingController.value * 50),
+          right: 50 + (index * 80),
+          child: Container(
+            width: 150,
+            height: 150,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  [
+                    ModernTheme.iosBlue,
+                    ModernTheme.iosPurple,
+                    ModernTheme.iosIndigo
+                  ][index]
+                      .withOpacity(0.3),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+              child: Container(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'SELFLOG',
+          style: Theme.of(context).textTheme.displayLarge,
+        )
+            .animate()
+            .fadeIn(duration: 800.ms, delay: 200.ms)
+            .slideY(begin: -0.3, end: 0, curve: Curves.easeOutQuart)
+            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutQuart),
+        const SizedBox(height: 12),
+        Text(
+          'Version control for\nhuman decisions',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: ModernTheme.textTertiary,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
+        )
+            .animate()
+            .fadeIn(duration: 800.ms, delay: 400.ms)
+            .slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuart),
+      ],
+    );
+  }
+
+  Widget _buildFeatureCard(
     String title,
     String description,
+    IconData icon,
+    Color color,
     int index,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.surfaceLight.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.primary,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: ModernTheme.glassBox(opacity: 0.05),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: color,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      description,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontSize: 14,
+                            height: 1.5,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+        ),
       ),
     )
         .animate()
-        .fadeIn(duration: 600.ms, delay: (500 + index * 100).ms)
-        .slideX(begin: -0.2, end: 0);
+        .fadeIn(duration: 600.ms, delay: (600 + index * 150).ms)
+        .slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuart)
+        .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutQuart);
+  }
+
+  Widget _buildCTAButton() {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const AuthScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 400),
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        height: 60,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: ModernTheme.iosBlue.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            'Get Started',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: 1200.ms)
+        .slideY(begin: 0.3, end: 0, curve: Curves.easeOutQuart)
+        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutQuart)
+        .then()
+        .shimmer(
+            duration: 2000.ms,
+            delay: 1000.ms,
+            color: Colors.white.withOpacity(0.3));
   }
 }
