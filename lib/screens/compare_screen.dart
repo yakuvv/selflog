@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'dart:ui';
 import '../models/commit.dart';
 import '../services/analysis_service.dart';
-import '../utils/app_theme.dart';
+import '../services/ai_agent_service.dart';
+import '../utils/modern_theme.dart';
 
-class CompareScreen extends StatelessWidget {
+class CompareScreen extends StatefulWidget {
   final Commit olderCommit;
   final Commit newerCommit;
 
@@ -16,223 +18,421 @@ class CompareScreen extends StatelessWidget {
   });
 
   @override
+  State<CompareScreen> createState() => _CompareScreenState();
+}
+
+class _CompareScreenState extends State<CompareScreen> {
+  final AnalysisService _analysisService = AnalysisService();
+  final AIAgentService _aiService = AIAgentService();
+
+  String _aiAnalysis = '';
+  bool _loadingAI = false;
+  bool _showAI = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAIAnalysis();
+  }
+
+  Future<void> _loadAIAnalysis() async {
+    setState(() => _loadingAI = true);
+
+    final analysis = await _aiService.generateAdvancedAnalysis(
+      widget.olderCommit,
+      widget.newerCommit,
+    );
+
+    setState(() {
+      _aiAnalysis = analysis;
+      _loadingAI = false;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final analysis = AnalysisService();
-    final diff = analysis.generateDiff(olderCommit, newerCommit);
-    final analyticalOutput = analysis.generateAnalysis(diff);
+    final diff = _analysisService.generateDiff(
+      widget.olderCommit,
+      widget.newerCommit,
+    );
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('COMMIT DIFF'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          // Header
-          Text(
-            'Comparing Commits',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
-
-          const SizedBox(height: 24),
-
-          // Commit info cards
-          _buildCommitCard(context, 'OLDER', olderCommit, 0),
-          const SizedBox(height: 16),
-          _buildCommitCard(context, 'NEWER', newerCommit, 1),
-
-          const SizedBox(height: 32),
-
-          // Analysis output
-          Text(
-            'Agent Analysis',
-            style: Theme.of(context).textTheme.headlineMedium,
-          )
-              .animate()
-              .fadeIn(duration: 400.ms, delay: 400.ms)
-              .slideX(begin: -0.1, end: 0),
-
-          const SizedBox(height: 16),
-
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppTheme.surfaceLight.withOpacity(0.3),
-                width: 1,
-              ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text('Commit Diff'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showAI ? Icons.analytics : Icons.psychology_outlined,
+              color: ModernTheme.iosPurple,
             ),
-            child: SelectableText(
-              analyticalOutput,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: AppTheme.textPrimary,
-                height: 1.6,
-              ),
-            ),
-          )
-              .animate()
-              .fadeIn(duration: 600.ms, delay: 600.ms)
-              .slideY(begin: 0.1, end: 0),
-
-          const SizedBox(height: 32),
-
-          // Visual diff indicators
-          _buildDiffSection(context, diff),
+            onPressed: () => setState(() => _showAI = !_showAI),
+          ),
         ],
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              ModernTheme.background,
+              ModernTheme.iosPurple.withOpacity(0.08),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              const SizedBox(height: 20),
+
+              _buildCommitCard('OLDER', widget.olderCommit, ModernTheme.accentRed, 0),
+
+              const SizedBox(height: 16),
+
+              _buildDiffIndicator(diff),
+
+              const SizedBox(height: 16),
+
+              _buildCommitCard('NEWER', widget.newerCommit, ModernTheme.accentGreen, 1),
+
+              const SizedBox(height: 30),
+
+              if (_showAI)
+                _buildAIAnalysisCard()
+              else
+                _buildLocalAnalysisCard(diff),
+
+              const SizedBox(height: 30),
+
+              _buildDiffDetails(diff),
+
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildCommitCard(
-    BuildContext context,
-    String label,
-    Commit commit,
-    int index,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: label == 'OLDER'
-              ? AppTheme.error.withOpacity(0.3)
-              : AppTheme.success.withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildCommitCard(String label, Commit commit, Color color, int index) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withOpacity(0.1),
+                color.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.3), width: 2),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: label == 'OLDER' ? AppTheme.error : AppTheme.success,
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    commit.id.substring(0, 8),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      color: ModernTheme.textTertiary,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
+              const SizedBox(height: 16),
               Text(
-                commit.id.substring(0, 8),
+                commit.title,
                 style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: ModernTheme.textPrimary,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            commit.title,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            DateFormat('MMM d, y • HH:mm').format(commit.timestamp),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 12,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Text('Confidence: '),
+              const SizedBox(height: 8),
               Text(
-                '${commit.confidence}%',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: _getConfidenceColor(commit.confidence),
+                DateFormat('MMM d, y • HH:mm').format(commit.timestamp),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: ModernTheme.textTertiary,
                 ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Text(
+                    'Confidence: ',
+                    style: TextStyle(color: ModernTheme.textSecondary),
+                  ),
+                  Text(
+                    '${commit.confidence}%',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     )
         .animate()
-        .fadeIn(duration: 400.ms, delay: (200 + index * 100).ms)
-        .slideX(begin: -0.1, end: 0);
+        .fadeIn(duration: 600.ms, delay: (index * 150).ms)
+        .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuart);
   }
 
-  Widget _buildDiffSection(BuildContext context, CommitDiff diff) {
+  Widget _buildDiffIndicator(CommitDiff diff) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              ModernTheme.iosBlue.withOpacity(0.2),
+              ModernTheme.iosPurple.withOpacity(0.2),
+            ],
+          ),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          diff.confidenceDelta > 0
+              ? Icons.trending_up
+              : diff.confidenceDelta < 0
+                  ? Icons.trending_down
+                  : Icons.trending_flat,
+          size: 32,
+          color: diff.confidenceDelta > 0
+              ? ModernTheme.accentGreen
+              : diff.confidenceDelta < 0
+                  ? ModernTheme.accentRed
+                  : ModernTheme.textTertiary,
+        ),
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: 300.ms)
+        .scale(begin: const Offset(0.5, 0.5), curve: Curves.easeOutBack);
+  }
+
+  Widget _buildAIAnalysisCard() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Visual Diff',
-          style: Theme.of(context).textTheme.headlineMedium,
-        )
-            .animate()
-            .fadeIn(duration: 400.ms, delay: 800.ms)
-            .slideX(begin: -0.1, end: 0),
+        Row(
+          children: [
+            Icon(
+              Icons.psychology_outlined,
+              color: ModernTheme.iosPurple,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'AI Agent Analysis',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: ModernTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    ModernTheme.iosPurple.withOpacity(0.15),
+                    ModernTheme.iosBlue.withOpacity(0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: ModernTheme.iosPurple.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: _loadingAI
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(
+                          color: ModernTheme.iosPurple,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    )
+                  : SelectableText(
+                      _aiAnalysis,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 13,
+                        color: ModernTheme.textPrimary,
+                        height: 1.6,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: 600.ms)
+        .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuart);
+  }
 
+  Widget _buildLocalAnalysisCard(CommitDiff diff) {
+    final localAnalysis = _analysisService.generateAnalysis(diff);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.analytics_outlined,
+              color: ModernTheme.iosBlue,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Local Analysis',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: ModernTheme.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: ModernTheme.glassBox(opacity: 0.05),
+              child: SelectableText(
+                localAnalysis,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  color: ModernTheme.textPrimary,
+                  height: 1.6,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    )
+        .animate()
+        .fadeIn(duration: 600.ms, delay: 600.ms)
+        .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuart);
+  }
+
+  Widget _buildDiffDetails(CommitDiff diff) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Detailed Diff',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: ModernTheme.textPrimary,
+          ),
+        ),
         const SizedBox(height: 16),
 
-        // Confidence delta
-        _buildDiffItem(
-          context,
+        _buildDiffMetric(
           'Confidence Delta',
           '${diff.confidenceDelta > 0 ? '+' : ''}${diff.confidenceDelta}%',
           diff.confidenceDelta > 0
-              ? AppTheme.success
+              ? ModernTheme.accentGreen
               : diff.confidenceDelta < 0
-                  ? AppTheme.error
-                  : AppTheme.textSecondary,
+                  ? ModernTheme.accentRed
+                  : ModernTheme.textTertiary,
           Icons.trending_up,
           0,
         ),
+
         const SizedBox(height: 12),
 
-        // Time elapsed
-        _buildDiffItem(
-          context,
+        _buildDiffMetric(
           'Time Elapsed',
           _formatDuration(diff.timeDelta),
-          AppTheme.primary,
+          ModernTheme.iosBlue,
           Icons.access_time,
           1,
         ),
 
         const SizedBox(height: 12),
 
-        // Constraints added
-        _buildDiffItem(
-          context,
+        _buildDiffMetric(
           'Constraints Added',
           '${diff.constraintsAdded.length}',
-          AppTheme.success,
+          ModernTheme.accentGreen,
           Icons.add_circle_outline,
           2,
         ),
 
         const SizedBox(height: 12),
 
-        // Constraints removed
-        _buildDiffItem(
-          context,
+        _buildDiffMetric(
           'Constraints Removed',
           '${diff.constraintsRemoved.length}',
-          AppTheme.error,
+          ModernTheme.accentRed,
           Icons.remove_circle_outline,
           3,
         ),
 
         const SizedBox(height: 12),
 
-        // Context evolution
-        _buildDiffItem(
-          context,
-          'Context Evolution',
+        _buildDiffMetric(
+          'Context Status',
           diff.contextEvolution,
-          AppTheme.accent,
+          ModernTheme.iosPurple,
           Icons.description,
           4,
         ),
@@ -240,54 +440,56 @@ class CompareScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDiffItem(
-    BuildContext context,
+  Widget _buildDiffMetric(
     String label,
     String value,
     Color color,
     IconData icon,
     int index,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: ModernTheme.glassBox(opacity: 0.05),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: ModernTheme.textSecondary,
+                  ),
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
       ),
     )
         .animate()
-        .fadeIn(duration: 400.ms, delay: (1000 + index * 100).ms)
-        .slideX(begin: -0.1, end: 0);
-  }
-
-  Color _getConfidenceColor(int confidence) {
-    if (confidence >= 80) return AppTheme.success;
-    if (confidence >= 50) return AppTheme.warning;
-    return AppTheme.error;
+        .fadeIn(duration: 400.ms, delay: (800 + index * 80).ms)
+        .slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuart);
   }
 
   String _formatDuration(Duration duration) {
@@ -298,7 +500,6 @@ class CompareScreen extends StatelessWidget {
       return '${duration.inHours}h ${duration.inMinutes % 60}m';
     }
     if (duration.inMinutes > 0) return '${duration.inMinutes}m';
-    return '${duration.inSeconds}s';
+      return '${duration.inSeconds}s';
   }
 }
-

@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/commit.dart';
 
 class AIAgentService {
   static const String _apiUrl = 'https://api.anthropic.com/v1/messages';
 
+  // API key - set this manually if you have one, otherwise uses local analysis
+  static const String _apiKey = ''; // Leave empty for local mode
+
   // Generate advanced analysis using Claude
   Future<String> generateAdvancedAnalysis(Commit older, Commit newer) async {
-    final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
-
-    if (apiKey.isEmpty) {
+    if (_apiKey.isEmpty) {
       return _generateLocalAnalysis(older, newer);
     }
 
@@ -19,7 +19,7 @@ class AIAgentService {
         Uri.parse(_apiUrl),
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-api-key': _apiKey,
           'anthropic-version': '2023-06-01',
         },
         body: jsonEncode({
@@ -92,11 +92,26 @@ Output format: Technical, data-driven, no subjective guidance.
     final removed = oldConstraints.difference(newConstraints);
 
     buffer.writeln('CONSTRAINTS ADDED: ${added.length}');
-    buffer.writeln('CONSTRAINTS REMOVED: ${removed.length}');
+    for (var constraint in added) {
+      buffer.writeln('  + $constraint');
+    }
+    buffer.writeln('\nCONSTRAINTS REMOVED: ${removed.length}');
+    for (var constraint in removed) {
+      buffer.writeln('  - $constraint');
+    }
     buffer.writeln(
         '\nTIME DELTA: ${newer.timestamp.difference(older.timestamp).inHours}h');
+    buffer.writeln(
+        '\nCONTEXT EVOLUTION: ${_analyzeContext(older.context, newer.context)}');
 
     return buffer.toString();
+  }
+
+  String _analyzeContext(String oldContext, String newContext) {
+    if (oldContext == newContext) return 'UNCHANGED';
+    if (newContext.length > oldContext.length * 1.5) return 'EXPANDED';
+    if (newContext.length < oldContext.length * 0.5) return 'REDUCED';
+    return 'MODIFIED';
   }
 
   // Generate reasoning pattern insights
