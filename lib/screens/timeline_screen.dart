@@ -21,7 +21,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
   List<Commit> _commits = [];
   bool _loading = true;
   final Set<String> _selectedCommits = {};
-  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -46,7 +45,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
         if (_selectedCommits.length < 2) {
           _selectedCommits.add(commitId);
         } else {
-          _selectedCommits.remove(_selectedCommits.first);
+          _selectedCommits.clear();
           _selectedCommits.add(commitId);
         }
       }
@@ -63,14 +62,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
     Navigator.push(
       context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => CompareScreen(
+      MaterialPageRoute(
+        builder: (context) => CompareScreen(
           olderCommit: commits[0],
           newerCommit: commits[1],
         ),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
       ),
     );
   }
@@ -78,21 +74,65 @@ class _TimelineScreenState extends State<TimelineScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text('SELFLOG'),
-        actions: [
-          if (_selectedCommits.length == 2)
-            IconButton(
-              icon: const Icon(Icons.compare_arrows),
-              onPressed: _compareSelected,
-              color: ModernTheme.iosBlue,
+      extendBodyBehindAppBar: false,
+      backgroundColor: ModernTheme.background,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Custom App Bar
+            _buildAppBar(),
+
+            // Stats Row
+            if (_commits.isNotEmpty) _buildStatsRow(),
+
+            // Commit List
+            Expanded(
+              child: _loading
+                  ? _buildLoadingState()
+                  : _commits.isEmpty
+                      ? _buildEmptyState()
+                      : _buildCommitList(),
             ),
-          IconButton(
-            icon: const Icon(Icons.insights_outlined),
-            onPressed: () {
+          ],
+        ),
+      ),
+      floatingActionButton: _buildFAB(),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        children: [
+          Text(
+            'Timeline',
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+              color: ModernTheme.textPrimary,
+              letterSpacing: -1.5,
+            ),
+          ),
+          const Spacer(),
+          if (_selectedCommits.length == 2)
+            GestureDetector(
+              onTap: _compareSelected,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.compare_arrows,
+                    color: Colors.white, size: 20),
+              ),
+            ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -100,127 +140,96 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 ),
               );
             },
-            color: ModernTheme.iosBlue,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: ModernTheme.backgroundSecondary,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(Icons.insights,
+                  color: ModernTheme.iosBlue, size: 20),
+            ),
           ),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              ModernTheme.background,
-              ModernTheme.iosPurple.withOpacity(0.08),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              _buildStatsBar(),
-              const SizedBox(height: 20),
-              Expanded(
-                child: _loading
-                    ? _buildLoadingState()
-                    : _commits.isEmpty
-                        ? _buildEmptyState()
-                        : _buildCommitList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: _buildFAB(),
     );
   }
 
-  Widget _buildStatsBar() {
-    if (_commits.isEmpty) return const SizedBox.shrink();
-
-    final avgConfidence = _commits.isEmpty
-        ? 0
-        : _commits.map((c) => c.confidence).reduce((a, b) => a + b) /
+  Widget _buildStatsRow() {
+    final avgConfidence =
+        _commits.map((c) => c.confidence).reduce((a, b) => a + b) /
             _commits.length;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
           Expanded(
-              child: _buildStatCard(
-                  'Commits', '${_commits.length}', Icons.commit, 0)),
+            child: _buildStatCard(
+              '${_commits.length}',
+              'Commits',
+              Icons.commit,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-              child: _buildStatCard('Avg Confidence',
-                  '${avgConfidence.toInt()}%', Icons.trending_up, 1)),
+            child: _buildStatCard(
+              '${avgConfidence.toInt()}%',
+              'Avg Confidence',
+              Icons.trending_up,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, int index) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: ModernTheme.glassBox(opacity: 0.05),
-          child: Column(
+  Widget _buildStatCard(String value, String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: ModernTheme.backgroundSecondary,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: ModernTheme.iosBlue.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: ModernTheme.iosBlue, size: 18),
+          ),
+          const SizedBox(width: 12),
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: ModernTheme.iosBlue, size: 20),
-              const SizedBox(height: 8),
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
                   color: ModernTheme.textPrimary,
                 ),
               ),
               Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   color: ModernTheme.textTertiary,
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
-    )
-        .animate()
-        .fadeIn(duration: 600.ms, delay: (index * 100).ms)
-        .slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuart);
+    );
   }
 
   Widget _buildLoadingState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 50,
-            height: 50,
-            child: CircularProgressIndicator(
-              color: ModernTheme.iosBlue,
-              strokeWidth: 3,
-            ),
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(duration: 600.ms)
-              .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeInOut),
-          const SizedBox(height: 20),
-          const Text(
-            'Loading timeline...',
-            style: TextStyle(color: ModernTheme.textTertiary),
-          ).animate().fadeIn(duration: 600.ms, delay: 300.ms),
-        ],
-      ),
+    return const Center(
+      child: CircularProgressIndicator(color: ModernTheme.iosBlue),
     );
   }
 
@@ -233,45 +242,37 @@ class _TimelineScreenState extends State<TimelineScreen> {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
                   ModernTheme.iosBlue.withOpacity(0.2),
                   ModernTheme.iosPurple.withOpacity(0.2),
                 ],
               ),
+              shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.timeline,
               size: 60,
               color: ModernTheme.iosBlue,
             ),
-          )
-              .animate(onPlay: (controller) => controller.repeat())
-              .fadeIn(duration: 1000.ms)
-              .scale(
-                begin: const Offset(0.9, 0.9),
-                end: const Offset(1.1, 1.1),
-                duration: 2000.ms,
-              )
-              .then()
-              .scale(
-                begin: const Offset(1.1, 1.1),
-                end: const Offset(0.9, 0.9),
-                duration: 2000.ms,
-              ),
+          ),
           const SizedBox(height: 32),
-          Text(
+          const Text(
             'No commits yet',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: ModernTheme.textSecondary,
-                ),
-          ).animate().fadeIn(duration: 800.ms, delay: 400.ms),
-          const SizedBox(height: 12),
-          Text(
-            'Start tracking your decisions',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ).animate().fadeIn(duration: 800.ms, delay: 600.ms),
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: ModernTheme.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Tap + to create your first decision',
+            style: TextStyle(
+              fontSize: 16,
+              color: ModernTheme.textTertiary,
+            ),
+          ),
         ],
       ),
     );
@@ -279,7 +280,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   Widget _buildCommitList() {
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100, top: 8),
       itemCount: _commits.length,
       itemBuilder: (context, index) {
         return _buildCommitCard(_commits[index], index);
@@ -294,104 +295,117 @@ class _TimelineScreenState extends State<TimelineScreen> {
       onTap: () => _toggleSelection(commit.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isSelected
-                      ? [
-                          ModernTheme.iosBlue.withOpacity(0.15),
-                          ModernTheme.iosPurple.withOpacity(0.15),
-                        ]
-                      : [
-                          ModernTheme.backgroundSecondary.withOpacity(0.5),
-                          ModernTheme.backgroundTertiary.withOpacity(0.3),
-                        ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? ModernTheme.iosBlue.withOpacity(0.5)
-                      : Colors.white.withOpacity(0.05),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          commit.title,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      _buildConfidenceBadge(commit.confidence),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    commit.context,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (commit.constraints.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: commit.constraints
-                          .take(3)
-                          .map((c) => _buildConstraintChip(c))
-                          .toList(),
-                    ),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isSelected
+                ? [
+                    ModernTheme.iosBlue.withOpacity(0.25),
+                    ModernTheme.iosPurple.withOpacity(0.25),
+                  ]
+                : [
+                    ModernTheme.backgroundSecondary,
+                    ModernTheme.backgroundTertiary,
                   ],
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: ModernTheme.textTertiary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        DateFormat('MMM d, y • HH:mm').format(commit.timestamp),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: ModernTheme.textTertiary,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        commit.id.substring(0, 8),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: ModernTheme.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
           ),
+          borderRadius: BorderRadius.circular(20),
+          border: isSelected
+              ? Border.all(color: ModernTheme.iosBlue, width: 2)
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    commit.title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: ModernTheme.textPrimary,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _buildConfidenceBadge(commit.confidence),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              commit.context,
+              style: const TextStyle(
+                fontSize: 15,
+                color: ModernTheme.textSecondary,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (commit.constraints.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: commit.constraints
+                    .take(3)
+                    .map((c) => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ModernTheme.elevated.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            c,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: ModernTheme.textSecondary,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: ModernTheme.textTertiary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  DateFormat('MMM d • HH:mm').format(commit.timestamp),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: ModernTheme.textTertiary,
+                  ),
+                ),
+                const Spacer(),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle,
+                    color: ModernTheme.iosBlue,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     )
         .animate()
         .fadeIn(duration: 400.ms, delay: (index * 50).ms)
-        .slideY(begin: 0.2, end: 0, curve: Curves.easeOutQuart)
-        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutQuart);
+        .slideX(begin: -0.1, curve: Curves.easeOut);
   }
 
   Widget _buildConfidenceBadge(int confidence) {
@@ -405,38 +419,18 @@ class _TimelineScreenState extends State<TimelineScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withOpacity(0.4), width: 1.5),
       ),
       child: Text(
         '$confidence%',
         style: TextStyle(
           color: color,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConstraintChip(String constraint) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: ModernTheme.elevated.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
-      ),
-      child: Text(
-        constraint,
-        style: const TextStyle(
-          color: ModernTheme.textSecondary,
-          fontSize: 12,
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -447,30 +441,13 @@ class _TimelineScreenState extends State<TimelineScreen> {
       onTap: () async {
         await Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const NewCommitScreen(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0, 1),
-                  end: Offset.zero,
-                ).animate(CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeOutQuart,
-                )),
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 500),
-          ),
+          MaterialPageRoute(builder: (context) => const NewCommitScreen()),
         );
         _loadCommits();
       },
       child: Container(
-        width: 64,
-        height: 64,
+        width: 68,
+        height: 68,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
@@ -478,9 +455,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: ModernTheme.iosBlue.withOpacity(0.5),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: ModernTheme.iosBlue.withOpacity(0.6),
+              blurRadius: 25,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
@@ -490,18 +467,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
           size: 32,
         ),
       ),
-    )
-        .animate(onPlay: (controller) => controller.repeat())
-        .scale(
-          begin: const Offset(1, 1),
-          end: const Offset(1.05, 1.05),
-          duration: 1500.ms,
-        )
-        .then()
-        .scale(
-          begin: const Offset(1.05, 1.05),
-          end: const Offset(1, 1),
-          duration: 1500.ms,
-        );
+    );
   }
 }

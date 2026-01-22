@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui';
 import '../utils/modern_theme.dart';
-import 'auth_screen.dart';
+import 'timeline_screen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
@@ -13,233 +13,271 @@ class LandingScreen extends StatefulWidget {
 
 class _LandingScreenState extends State<LandingScreen>
     with TickerProviderStateMixin {
-  late AnimationController _floatingController;
+  late AnimationController _particleController;
 
   @override
   void initState() {
     super.initState();
-    _floatingController = AnimationController(
+    _particleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
+      duration: const Duration(seconds: 20),
+    )..repeat();
   }
 
   @override
   void dispose() {
-    _floatingController.dispose();
+    _particleController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              ModernTheme.background,
-              ModernTheme.iosPurple.withOpacity(0.1),
-              ModernTheme.background,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              // Animated background particles
-              ...List.generate(3, (index) => _buildFloatingOrb(index)),
-
-              // Main content
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Spacer(flex: 2),
-
-                    // Logo/App name
-                    _buildHeader(),
-
-                    const SizedBox(height: 60),
-
-                    // Feature cards
-                    _buildFeatureCard(
-                      'Immutable',
-                      'Every decision is a commit.\nHistory cannot be rewritten.',
-                      Icons.lock_outline,
-                      ModernTheme.iosBlue,
-                      0,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildFeatureCard(
-                      'AI-Powered',
-                      'Agentic analysis of your\nreasoning evolution.',
-                      Icons.psychology_outlined,
-                      ModernTheme.iosPurple,
-                      1,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildFeatureCard(
-                      'Voice Notes',
-                      'Capture thoughts instantly\nwith voice recording.',
-                      Icons.mic_none,
-                      ModernTheme.iosIndigo,
-                      2,
-                    ),
-
-                    const Spacer(flex: 3),
-
-                    // CTA Button
-                    _buildCTAButton(),
-
-                    const SizedBox(height: 40),
-                  ],
+      body: Stack(
+        children: [
+          // Animated gradient background
+          AnimatedBuilder(
+            animation: _particleController,
+            builder: (context, child) {
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      ModernTheme.background,
+                      Color.lerp(
+                        ModernTheme.iosPurple,
+                        ModernTheme.iosBlue,
+                        _particleController.value,
+                      )!
+                          .withOpacity(0.15),
+                      ModernTheme.background,
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              );
+            },
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildFloatingOrb(int index) {
-    return AnimatedBuilder(
-      animation: _floatingController,
-      builder: (context, child) {
-        return Positioned(
-          top: 100 + (index * 200) + (_floatingController.value * 50),
-          right: 50 + (index * 80),
-          child: Container(
-            width: 150,
-            height: 150,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  [
-                    ModernTheme.iosBlue,
-                    ModernTheme.iosPurple,
-                    ModernTheme.iosIndigo
-                  ][index]
-                      .withOpacity(0.3),
-                  Colors.transparent,
+          // Floating particles
+          ...List.generate(
+            5,
+            (index) => _AnimatedParticle(
+              controller: _particleController,
+              index: index,
+              size: size,
+            ),
+          ),
+
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(flex: 1),
+
+                  // App logo/icon
+                  _buildLogo(),
+
+                  const SizedBox(height: 24),
+
+                  // Title
+                  Text(
+                    'SELFLOG',
+                    style: TextStyle(
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      height: 0.9,
+                      letterSpacing: -3,
+                      foreground: Paint()
+                        ..shader = LinearGradient(
+                          colors: [
+                            ModernTheme.iosBlue,
+                            ModernTheme.iosPurple,
+                          ],
+                        ).createShader(const Rect.fromLTWH(0, 0, 300, 100)),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 800.ms, delay: 200.ms)
+                      .slideY(begin: -0.5, curve: Curves.easeOutCubic)
+                      .shimmer(delay: 1000.ms, duration: 2000.ms),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Version control for\nhuman decisions',
+                    style: TextStyle(
+                      fontSize: 22,
+                      height: 1.3,
+                      color: ModernTheme.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 800.ms, delay: 400.ms)
+                      .slideY(begin: -0.3, curve: Curves.easeOutCubic),
+
+                  const Spacer(flex: 2),
+
+                  // Feature highlights
+                  _buildFeatureHighlight(
+                    icon: '🔒',
+                    title: 'Immutable',
+                    subtitle: 'Every decision is a permanent commit',
+                    delay: 600,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _buildFeatureHighlight(
+                    icon: '🤖',
+                    title: 'AI-Powered',
+                    subtitle: 'Intelligent analysis of your evolution',
+                    delay: 750,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  _buildFeatureHighlight(
+                    icon: '🎤',
+                    title: 'Voice Notes',
+                    subtitle: 'Capture thoughts instantly',
+                    delay: 900,
+                  ),
+
+                  const Spacer(flex: 2),
+
+                  // CTA Button
+                  _buildGetStartedButton(),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
-              child: Container(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: ModernTheme.iosBlue.withOpacity(0.5),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.psychology,
+        size: 45,
+        color: Colors.white,
+      ),
+    )
+        .animate()
+        .fadeIn(duration: 800.ms)
+        .scale(begin: const Offset(0.5, 0.5), curve: Curves.easeOutBack);
+  }
+
+  Widget _buildFeatureHighlight({
+    required String icon,
+    required String title,
+    required String subtitle,
+    required int delay,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                ModernTheme.iosBlue.withOpacity(0.15),
+                ModernTheme.iosPurple.withOpacity(0.15),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: ModernTheme.iosBlue.withOpacity(0.3),
+              width: 1.5,
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'SELFLOG',
-          style: Theme.of(context).textTheme.displayLarge,
-        )
-            .animate()
-            .fadeIn(duration: 800.ms, delay: 200.ms)
-            .slideY(begin: -0.3, end: 0, curve: Curves.easeOutQuart)
-            .scale(begin: const Offset(0.8, 0.8), curve: Curves.easeOutQuart),
-        const SizedBox(height: 12),
-        Text(
-          'Version control for\nhuman decisions',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: ModernTheme.textTertiary,
-                fontWeight: FontWeight.w400,
-                height: 1.4,
-              ),
-        )
-            .animate()
-            .fadeIn(duration: 800.ms, delay: 400.ms)
-            .slideY(begin: -0.2, end: 0, curve: Curves.easeOutQuart),
-      ],
-    );
-  }
-
-  Widget _buildFeatureCard(
-    String title,
-    String description,
-    IconData icon,
-    Color color,
-    int index,
-  ) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: ModernTheme.glassBox(opacity: 0.05),
-          child: Row(
+          child: Center(
+            child: Text(
+              icon,
+              style: const TextStyle(fontSize: 28),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: ModernTheme.textPrimary,
+                  letterSpacing: -0.5,
                 ),
-                child: Icon(icon, color: color, size: 28),
               ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: color,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                    ),
-                  ],
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: ModernTheme.textTertiary,
+                  height: 1.3,
                 ),
               ),
             ],
           ),
         ),
-      ),
+      ],
     )
         .animate()
-        .fadeIn(duration: 600.ms, delay: (600 + index * 150).ms)
-        .slideX(begin: -0.2, end: 0, curve: Curves.easeOutQuart)
-        .scale(begin: const Offset(0.9, 0.9), curve: Curves.easeOutQuart);
+        .fadeIn(duration: 600.ms, delay: delay.ms)
+        .slideX(begin: -0.3, curve: Curves.easeOutCubic);
   }
 
-  Widget _buildCTAButton() {
+  Widget _buildGetStartedButton() {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const AuthScreen(),
+                const TimelineScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+                    CurvedAnimation(
+                        parent: animation, curve: Curves.easeOutCubic),
+                  ),
+                  child: child,
+                ),
+              );
             },
             transitionDuration: const Duration(milliseconds: 400),
           ),
@@ -247,39 +285,92 @@ class _LandingScreenState extends State<LandingScreen>
       },
       child: Container(
         width: double.infinity,
-        height: 60,
+        height: 64,
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
           ),
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: ModernTheme.iosBlue.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: ModernTheme.iosBlue.withOpacity(0.5),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
             ),
           ],
         ),
-        child: Center(
-          child: Text(
-            'Get Started',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Get Started',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
+          ],
         ),
       ),
     )
         .animate()
-        .fadeIn(duration: 600.ms, delay: 1200.ms)
-        .slideY(begin: 0.3, end: 0, curve: Curves.easeOutQuart)
-        .scale(begin: const Offset(0.95, 0.95), curve: Curves.easeOutQuart)
-        .then()
-        .shimmer(
-            duration: 2000.ms,
-            delay: 1000.ms,
-            color: Colors.white.withOpacity(0.3));
+        .fadeIn(duration: 800.ms, delay: 1200.ms)
+        .slideY(begin: 0.5, curve: Curves.easeOutCubic)
+        .shimmer(delay: 2000.ms, duration: 2000.ms);
+  }
+}
+
+class _AnimatedParticle extends StatelessWidget {
+  final AnimationController controller;
+  final int index;
+  final Size size;
+
+  const _AnimatedParticle({
+    required this.controller,
+    required this.index,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final random = (index * 37) % 100;
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final progress = (controller.value + random / 100) % 1.0;
+
+        return Positioned(
+          left: size.width * (0.1 + (index * 0.2)),
+          top: size.height * progress,
+          child: Container(
+            width: 100 + (index * 20),
+            height: 100 + (index * 20),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  [
+                    ModernTheme.iosBlue,
+                    ModernTheme.iosPurple,
+                    ModernTheme.iosIndigo,
+                  ][index % 3]
+                      .withOpacity(0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

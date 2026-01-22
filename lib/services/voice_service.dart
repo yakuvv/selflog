@@ -77,12 +77,3 @@ class VoiceService {
     _recorder.dispose();
   }
 }
-```
-
----
-
-### Step 6.4: Create AI Agent Service
-
-Create `.env` file in project root:
-```
-ANTHROPIC_API_KEY=your_api_key_here
