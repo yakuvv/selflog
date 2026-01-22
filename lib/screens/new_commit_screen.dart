@@ -640,7 +640,7 @@ class _NewCommitScreenState extends State<NewCommitScreen>
               color: ModernTheme.iosBlue.withOpacity(0.5),
               blurRadius: 25,
               offset: const Offset(0, 12),
-            ),
+            ),import '../services/voice_service.dart';
           ],
         ),
         child: Center(
@@ -661,7 +661,7 @@ class _NewCommitScreenState extends State<NewCommitScreen>
                       style: TextStyle(
                         fontSize: 19,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: Colors.white,import '../services/voice_service.dart';
                         letterSpacing: 0.3,
                       ),
                     ),

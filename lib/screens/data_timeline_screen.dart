@@ -1,9 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
 import '../models/commit.dart';
 import '../services/ai_agent_service.dart';
 import '../utils/modern_theme.dart';
