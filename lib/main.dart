@@ -35,7 +35,7 @@ class SelfLogApp extends StatelessWidget {
       title: 'SELFLOG',
       theme: ModernTheme.darkTheme,
       home: const LandingScreen(),
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: false, // ← ADD THIS LINE
     );
   }
 }
