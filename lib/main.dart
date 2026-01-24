@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import 'screens/timeline_screen.dart';
+import 'screens/landing_screen.dart';
 import 'utils/modern_theme.dart';
 
 Future<void> main() async {
@@ -11,15 +10,8 @@ Future<void> main() async {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: ModernTheme.background,
-      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
 
   runApp(const SelfLogApp());
 }
@@ -32,7 +24,7 @@ class SelfLogApp extends StatelessWidget {
     return MaterialApp(
       title: 'SELFLOG',
       theme: ModernTheme.darkTheme,
-      home: const TimelineScreen(), // SKIP landing, go straight to timeline
+      home: const LandingScreen(), // START WITH LANDING
       debugShowCheckedModeBanner: false,
     );
   }

@@ -112,7 +112,7 @@ class _LandingScreenState extends State<LandingScreen>
                               ],
                             ).createShader(bounds),
                             child: const Text(
-                              'SELFLOGG',
+                              'SELFLOG',
                               style: TextStyle(
                                 fontSize: 64,
                                 fontWeight: FontWeight.w900,
