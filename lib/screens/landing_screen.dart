@@ -86,8 +86,10 @@ class _LandingScreenState extends State<LandingScreen>
                       MediaQuery.of(context).padding.bottom,
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -153,7 +155,7 @@ class _LandingScreenState extends State<LandingScreen>
                             delay: 600,
                             gradient: [
                               ModernTheme.iosBlue,
-                              ModernTheme.iosPurple
+                              ModernTheme.iosPurple,
                             ],
                           ),
 
@@ -167,7 +169,7 @@ class _LandingScreenState extends State<LandingScreen>
                             delay: 750,
                             gradient: [
                               ModernTheme.iosPurple,
-                              ModernTheme.iosIndigo
+                              ModernTheme.iosIndigo,
                             ],
                           ),
 
@@ -181,7 +183,7 @@ class _LandingScreenState extends State<LandingScreen>
                             delay: 900,
                             gradient: [
                               ModernTheme.iosIndigo,
-                              ModernTheme.iosBlue
+                              ModernTheme.iosBlue,
                             ],
                           ),
                         ],
@@ -243,27 +245,30 @@ class _LandingScreenState extends State<LandingScreen>
       animation: _pulseController,
       builder: (context, child) {
         return Container(
-          width: 80,
-          height: 80,
+          width: 90,
+          height: 90,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: ModernTheme.iosBlue
-                    .withOpacity(0.5 + _pulseController.value * 0.3),
+                color: ModernTheme.iosBlue.withOpacity(
+                  0.5 + _pulseController.value * 0.3,
+                ),
                 blurRadius: 30 + _pulseController.value * 20,
                 offset: const Offset(0, 10),
                 spreadRadius: _pulseController.value * 5,
               ),
             ],
           ),
-          child: const Icon(
-            Icons.psychology,
-            size: 45,
-            color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Image.asset(
+              'assets/selflog-logo.png',
+              fit: BoxFit.contain,
+            ),
           ),
         );
       },
@@ -312,11 +317,7 @@ class _LandingScreenState extends State<LandingScreen>
                     width: 1.5,
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 28,
-                ),
+                child: Icon(icon, color: iconColor, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -370,7 +371,9 @@ class _LandingScreenState extends State<LandingScreen>
                 child: ScaleTransition(
                   scale: Tween<double>(begin: 0.95, end: 1.0).animate(
                     CurvedAnimation(
-                        parent: animation, curve: Curves.easeOutCubic),
+                      parent: animation,
+                      curve: Curves.easeOutCubic,
+                    ),
                   ),
                   child: child,
                 ),
@@ -393,8 +396,9 @@ class _LandingScreenState extends State<LandingScreen>
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: ModernTheme.iosBlue
-                      .withOpacity(0.5 + _pulseController.value * 0.2),
+                  color: ModernTheme.iosBlue.withOpacity(
+                    0.5 + _pulseController.value * 0.2,
+                  ),
                   blurRadius: 30 + _pulseController.value * 10,
                   offset: const Offset(0, 15),
                 ),

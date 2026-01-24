@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <base href="$FLUTTER_BASE_HREF">
+
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="SELFLOG - Version control system for human decisions">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <!-- iOS meta tags -->
+  <meta name="description" content="SELFLOG - Version control for human decisions">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SELFLOG">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png" />
-
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="icon" type="image/png" href="favicon.png"/>
   <title>SELFLOG - Version Control for Human Decisions</title>
   <link rel="manifest" href="manifest.json">
 
@@ -23,46 +19,123 @@
     body {
       margin: 0;
       padding: 0;
-      background: #000000;
+      background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
       overflow: hidden;
     }
 
-    /* Loading animation */
-    .loading {
+    .loading-container {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #000000 100%);
+      width: 100vw;
+      height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
       z-index: 9999;
     }
 
-    .loader {
+    .loading-logo {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #007AFF, #5856D6);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 20px 60px rgba(88, 86, 214, 0.4);
+      animation: pulse 2s ease-in-out infinite;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .loading-logo img {
       width: 60px;
       height: 60px;
-      border: 4px solid rgba(94, 92, 230, 0.2);
-      border-top-color: #5e5ce6;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+
+    .loading-text {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #007AFF, #5856D6, #5AC8FA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -2px;
+      margin-bottom: 10px;
+    }
+
+    .loading-subtitle {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 500;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(88, 86, 214, 0.2);
+      border-top-color: #5856D6;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+      margin-top: 30px;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 20px 60px rgba(88, 86, 214, 0.4);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 25px 80px rgba(88, 86, 214, 0.6);
+      }
     }
 
     @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
+    }
+
+    .flutter-ready .loading-container {
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+      pointer-events: none;
     }
   </style>
 </head>
-
 <body>
-  <div class="loading">
-    <div class="loader"></div>
+  <div class="loading-container">
+    <div class="loading-logo">
+      <img src="icons/selflog-logo.png" alt="SELFLOG Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🧠';">
+    </div>
+    <div class="loading-text">SELFLOG</div>
+    <div class="loading-subtitle">Version control for human decisions</div>
+    <div class="loading-spinner"></div>
   </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('flutter-first-frame', function () {
+        navigator.serviceWorker.register('flutter_service_worker.js');
+      });
+    }
+
+    window.addEventListener('flutter-first-frame', function() {
+      setTimeout(function() {
+        document.body.classList.add('flutter-ready');
+        setTimeout(function() {
+          document.querySelector('.loading-container').remove();
+        }, 500);
+      }, 100);
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
-
 </html>
