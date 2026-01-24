@@ -1,0 +1,8 @@
+{
+  "name": "selflog",
+  "version": "2.0.0",
+  "description": "Version control system for human decisions",
+  "scripts": {
+    "build": "flutter build web --release --web-renderer html"
+  }
+}
