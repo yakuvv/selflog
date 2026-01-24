@@ -1,141 +1,187 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="SELFLOG - Version control for human decisions">
+  <meta name="description" content="SELFLOG - Version control system for human decisions">
+
+  <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="SELFLOG">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#000000">
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png" />
+
   <title>SELFLOG - Version Control for Human Decisions</title>
   <link rel="manifest" href="manifest.json">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- Preload critical resources for faster loading -->
+  <link rel="preload" href="flutter_bootstrap.js" as="script">
 
   <style>
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
+      background: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
       overflow: hidden;
-    }
-
-    .loading-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #000000 0%, #1a1a2e 100%);
-      z-index: 9999;
-    }
-
-    .loading-logo {
-      width: 100px;
-      height: 100px;
-      background: linear-gradient(135deg, #007AFF, #5856D6);
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 20px 60px rgba(88, 86, 214, 0.4);
-      animation: pulse 2s ease-in-out infinite;
-      margin-bottom: 30px;
-      overflow: hidden;
-    }
-
-    .loading-logo img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-      filter: brightness(0) invert(1);
-    }
-
-    .loading-text {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 32px;
-      font-weight: 900;
-      background: linear-gradient(135deg, #007AFF, #5856D6, #5AC8FA);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -2px;
-      margin-bottom: 10px;
-    }
-
-    .loading-subtitle {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 16px;
-      color: rgba(255, 255, 255, 0.6);
-      font-weight: 500;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(88, 86, 214, 0.2);
-      border-top-color: #5856D6;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-top: 30px;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 20px 60px rgba(88, 86, 214, 0.4);
-      }
-      50% {
-        transform: scale(1.05);
-        box-shadow: 0 25px 80px rgba(88, 86, 214, 0.6);
-      }
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .flutter-ready .loading-container {
-      opacity: 0;
-      transition: opacity 0.5s ease-out;
-      pointer-events: none;
     }
   </style>
 </head>
+
 <body>
-  <div class="loading-container">
-    <div class="loading-logo">
-      <img src="icons/selflog-logo.png" alt="SELFLOG Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='🧠';">
+  <!-- Loading Screen -->
+  <div id="loading">
+    <style>
+      #loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #000000 0%, #0f0f23 50%, #1a1a2e 100%);
+        z-index: 9999;
+      }
+
+      .loading-content {
+        text-align: center;
+        animation: fadeIn 0.6s ease-in;
+      }
+
+      .logo-text {
+        font-size: 72px;
+        font-weight: 900;
+        background: linear-gradient(135deg, #007AFF 0%, #5856D6 50%, #5AC8FA 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -3px;
+        margin-bottom: 16px;
+        animation: shimmer 2s ease-in-out infinite;
+      }
+
+      .tagline {
+        font-size: 20px;
+        color: #8E8E93;
+        font-weight: 500;
+        letter-spacing: -0.3px;
+        margin-bottom: 40px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto;
+        border: 3px solid rgba(0, 122, 255, 0.1);
+        border-top-color: #007AFF;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .loading-text {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #5E5E63;
+        font-weight: 400;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes shimmer {
+
+        0%,
+        100% {
+          opacity: 1;
+          filter: brightness(1);
+        }
+
+        50% {
+          opacity: 0.85;
+          filter: brightness(1.1);
+        }
+      }
+
+      /* Fade out animation when Flutter loads */
+      #loading.loaded {
+        animation: fadeOut 0.5s ease-out forwards;
+      }
+
+      @keyframes fadeOut {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+    </style>
+
+    <div class="loading-content">
+      <div class="logo-text">SELFLOG</div>
+      <div class="tagline">Version control for human decisions</div>
+      <div class="spinner"></div>
+      <div class="loading-text">Loading...</div>
     </div>
-    <div class="loading-text">SELFLOG</div>
-    <div class="loading-subtitle">Version control for human decisions</div>
-    <div class="loading-spinner"></div>
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('flutter-first-frame', function () {
-        navigator.serviceWorker.register('flutter_service_worker.js');
-      });
-    }
-
-    window.addEventListener('flutter-first-frame', function() {
-      setTimeout(function() {
-        document.body.classList.add('flutter-ready');
-        setTimeout(function() {
-          document.querySelector('.loading-container').remove();
-        }, 500);
-      }, 100);
+    // Hide loading screen when Flutter is ready
+    window.addEventListener('flutter-first-frame', function () {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.classList.add('loaded');
+        setTimeout(() => loading.remove(), 500);
+      }
     });
+
+    // Fallback: Remove loading screen after 15 seconds
+    setTimeout(function () {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.classList.add('loaded');
+        setTimeout(() => loading.remove(), 500);
+      }
+    }, 15000);
   </script>
 
   <script src="flutter_bootstrap.js" async></script>
 </body>
+
 </html>

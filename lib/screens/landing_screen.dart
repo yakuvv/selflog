@@ -249,12 +249,15 @@ class _LandingScreenState extends State<LandingScreen>
           height: 90,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+              colors: [
+                Color.fromARGB(255, 254, 254, 254),
+                Color.fromARGB(255, 255, 255, 255)
+              ],
             ),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: ModernTheme.iosBlue.withOpacity(
+                color: const Color.fromARGB(255, 84, 155, 232).withOpacity(
                   0.5 + _pulseController.value * 0.3,
                 ),
                 blurRadius: 30 + _pulseController.value * 20,
