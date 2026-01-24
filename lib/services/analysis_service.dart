@@ -43,49 +43,54 @@ class AnalysisService {
   }
 
   String _analyzeContextChange(String oldContext, String newContext) {
-    if (oldContext == newContext) return 'CONTEXT_UNCHANGED';
-    if (newContext.length > oldContext.length * 1.5) return 'CONTEXT_EXPANDED';
-    if (newContext.length < oldContext.length * 0.5) return 'CONTEXT_REDUCED';
-    return 'CONTEXT_MODIFIED';
+    if (oldContext == newContext) return 'Unchanged';
+    if (newContext.length > oldContext.length * 1.5) return 'Expanded';
+    if (newContext.length < oldContext.length * 0.5) return 'Simplified';
+    return 'Evolved';
   }
 
-  // Generate analytical summary
+  // Generate analytical summary with better formatting
   String generateAnalysis(CommitDiff diff) {
     final buffer = StringBuffer();
 
-    buffer.writeln('=== COMMIT DIFF ANALYSIS ===\n');
+    buffer.writeln('DECISION COMPARISON\n');
 
     // Confidence evolution
-    buffer.writeln(
-        'CONFIDENCE DELTA: ${diff.confidenceDelta > 0 ? '+' : ''}${diff.confidenceDelta}');
     if (diff.confidenceDelta > 0) {
-      buffer.writeln('STATUS: Certainty increased');
+      buffer.writeln('CONFIDENCE INCREASED: +${diff.confidenceDelta}%');
+      buffer.writeln('Your certainty has grown over time.\n');
     } else if (diff.confidenceDelta < 0) {
-      buffer.writeln('STATUS: Certainty decreased');
+      buffer.writeln('CONFIDENCE DECREASED: ${diff.confidenceDelta}%');
+      buffer.writeln('You became more cautious about this decision.\n');
     } else {
-      buffer.writeln('STATUS: Certainty stable');
+      buffer.writeln('CONFIDENCE STABLE: No change in certainty level.\n');
     }
-    buffer.writeln();
 
     // Constraint evolution
-    buffer.writeln('CONSTRAINTS ADDED: ${diff.constraintsAdded.length}');
-    for (var constraint in diff.constraintsAdded) {
-      buffer.writeln('  + $constraint');
+    if (diff.constraintsAdded.isNotEmpty) {
+      buffer.writeln('NEW FACTORS (${diff.constraintsAdded.length}):');
+      for (var constraint in diff.constraintsAdded) {
+        buffer.writeln('  + $constraint');
+      }
+      buffer.writeln();
     }
-    buffer.writeln();
 
-    buffer.writeln('CONSTRAINTS REMOVED: ${diff.constraintsRemoved.length}');
-    for (var constraint in diff.constraintsRemoved) {
-      buffer.writeln('  - $constraint');
+    if (diff.constraintsRemoved.isNotEmpty) {
+      buffer.writeln(
+          'NO LONGER CONSIDERING (${diff.constraintsRemoved.length}):');
+      for (var constraint in diff.constraintsRemoved) {
+        buffer.writeln('  - $constraint');
+      }
+      buffer.writeln();
     }
-    buffer.writeln();
 
     // Time delta
-    buffer.writeln('TIME ELAPSED: ${_formatDuration(diff.timeDelta)}');
+    buffer
+        .writeln('TIME BETWEEN DECISIONS: ${_formatDuration(diff.timeDelta)}');
     buffer.writeln();
 
     // Context evolution
-    buffer.writeln('CONTEXT STATUS: ${diff.contextEvolution}');
+    buffer.writeln('REASONING STATUS: ${diff.contextEvolution}');
 
     return buffer.toString();
   }
@@ -101,15 +106,15 @@ class AnalysisService {
 
   // Reasoning evolution pattern detection
   String detectPattern(List<Commit> commits) {
-    if (commits.length < 2) return 'INSUFFICIENT_DATA';
+    if (commits.length < 2) return 'Not enough data to detect patterns';
 
     // Calculate confidence trend
     final confidences = commits.map((c) => c.confidence).toList();
     final avgChange =
         (confidences.last - confidences.first) / (commits.length - 1);
 
-    if (avgChange > 5) return 'CONFIDENCE_INCREASING';
-    if (avgChange < -5) return 'CONFIDENCE_DECREASING';
-    return 'CONFIDENCE_OSCILLATING';
+    if (avgChange > 5) return 'Your confidence is growing over time';
+    if (avgChange < -5) return 'Your confidence is declining';
+    return 'Your confidence fluctuates regularly';
   }
 }
