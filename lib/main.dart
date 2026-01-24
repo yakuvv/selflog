@@ -1,25 +1,25 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'firebase_options.dart';
-import 'screens/auth_screen.dart';
+import 'screens/timeline_screen.dart';
 import 'utils/modern_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: ModernTheme.background,
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
   runApp(const SelfLogApp());
 }
@@ -32,7 +32,7 @@ class SelfLogApp extends StatelessWidget {
     return MaterialApp(
       title: 'SELFLOG',
       theme: ModernTheme.darkTheme,
-      home: const AuthScreen(), // START WITH AUTH
+      home: const TimelineScreen(), // SKIP landing, go straight to timeline
       debugShowCheckedModeBanner: false,
     );
   }

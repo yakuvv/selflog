@@ -1,5 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+
+class ResponsiveSize {
+  static late double _screenWidth;
+  static late double _screenHeight;
+  static late double _scaleFactor;
+
+  static void init(BuildContext context) {
+    _screenWidth = MediaQuery.of(context).size.width;
+    _screenHeight = MediaQuery.of(context).size.height;
+
+    // iPhone 16 Pro Max reference: 430 x 932
+    _scaleFactor = _screenWidth / 430;
+  }
+
+  static double width(double size) => size * _scaleFactor;
+  static double height(double size) => size * (_screenHeight / 932);
+  static double font(double size) => size * _scaleFactor;
+}
 
 class ModernTheme {
   // iOS-inspired colors

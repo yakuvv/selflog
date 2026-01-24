@@ -4,7 +4,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/commit.dart';
 import '../services/storage_service.dart';
-import '../services/voice_service.dart';
 import '../utils/modern_theme.dart';
 
 class NewCommitScreen extends StatefulWidget {
@@ -25,68 +24,13 @@ class _NewCommitScreenState extends State<NewCommitScreen>
   double _confidence = 50;
   bool _saving = false;
 
-  final VoiceService _voiceService = VoiceService();
-  bool _isRecording = false;
-  String? _voiceNotePath;
-  late AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-  }
-
   @override
   void dispose() {
     _titleController.dispose();
     _contextController.dispose();
     _notesController.dispose();
     _constraintController.dispose();
-    _voiceService.dispose();
-    _pulseController.dispose();
     super.dispose();
-  }
-
-  Future<void> _toggleRecording() async {
-    if (_isRecording) {
-      final path = await _voiceService.stopRecording();
-      setState(() {
-        _isRecording = false;
-        _voiceNotePath = path;
-      });
-      _pulseController.stop();
-
-      if (path != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Voice note saved'),
-            backgroundColor: ModernTheme.accentGreen,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    } else {
-      final started = await _voiceService.startRecording();
-      if (started) {
-        setState(() => _isRecording = true);
-        _pulseController.repeat(reverse: true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Microphone permission denied'),
-            backgroundColor: ModernTheme.accentRed,
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    }
   }
 
   void _addConstraint() {
@@ -117,8 +61,7 @@ class _NewCommitScreenState extends State<NewCommitScreen>
       context: _contextController.text.trim(),
       constraints: _constraints,
       confidence: _confidence.round(),
-      notes: _notesController.text.trim() +
-          (_voiceNotePath != null ? '\n[Voice Note: $_voiceNotePath]' : ''),
+      notes: _notesController.text.trim(),
     );
 
     await StorageService().addCommit(commit);
@@ -216,55 +159,52 @@ class _NewCommitScreenState extends State<NewCommitScreen>
     bool required = true,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: ModernTheme.textSecondary,
-            letterSpacing: -0.3,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            color: ModernTheme.backgroundSecondary,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: ModernTheme.textTertiary.withOpacity(0.1),
-            ),
-          ),
-          child: TextFormField(
-            controller: controller,
-            maxLines: maxLines,
-            style: const TextStyle(
-              color: ModernTheme.textPrimary,
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(
-                color: ModernTheme.textTertiary.withOpacity(0.5),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
                 fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: ModernTheme.textSecondary,
+                letterSpacing: -0.3,
               ),
-              prefixIcon: Icon(
-                icon,
-                color: ModernTheme.iosBlue,
-                size: 22,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(18),
             ),
-            validator: required
-                ? (v) =>
-                    v?.trim().isEmpty ?? true ? 'This field is required' : null
-                : null,
-          ),
-        ),
-      ],
-    )
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: ModernTheme.backgroundSecondary,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: ModernTheme.textTertiary.withOpacity(0.1),
+                ),
+              ),
+              child: TextFormField(
+                controller: controller,
+                maxLines: maxLines,
+                style: const TextStyle(
+                  color: ModernTheme.textPrimary,
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  hintStyle: TextStyle(
+                    color: ModernTheme.textTertiary.withOpacity(0.5),
+                    fontSize: 15,
+                  ),
+                  prefixIcon: Icon(icon, color: ModernTheme.iosBlue, size: 22),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(18),
+                ),
+                validator: required
+                    ? (v) => v?.trim().isEmpty ?? true
+                          ? 'This field is required'
+                          : null
+                    : null,
+              ),
+            ),
+          ],
+        )
         .animate()
         .fadeIn(duration: 500.ms, delay: delay.ms)
         .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
@@ -272,86 +212,86 @@ class _NewCommitScreenState extends State<NewCommitScreen>
 
   Widget _buildConstraintsSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Constraints',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: ModernTheme.textSecondary,
-            letterSpacing: -0.3,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: ModernTheme.backgroundSecondary,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: ModernTheme.textTertiary.withOpacity(0.1),
-                  ),
-                ),
-                child: TextField(
-                  controller: _constraintController,
-                  style: const TextStyle(
-                    color: ModernTheme.textPrimary,
-                    fontSize: 16,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Add a constraint...',
-                    hintStyle: TextStyle(
-                      color: ModernTheme.textTertiary.withOpacity(0.5),
-                      fontSize: 15,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(18),
-                  ),
-                  onSubmitted: (_) => _addConstraint(),
-                ),
+            const Text(
+              'Constraints',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: ModernTheme.textSecondary,
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: _addConstraint,
-              child: Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ModernTheme.iosBlue.withOpacity(0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: ModernTheme.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: ModernTheme.textTertiary.withOpacity(0.1),
+                      ),
                     ),
-                  ],
+                    child: TextField(
+                      controller: _constraintController,
+                      style: const TextStyle(
+                        color: ModernTheme.textPrimary,
+                        fontSize: 16,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Add a constraint...',
+                        hintStyle: TextStyle(
+                          color: ModernTheme.textTertiary.withOpacity(0.5),
+                          fontSize: 15,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(18),
+                      ),
+                      onSubmitted: (_) => _addConstraint(),
+                    ),
+                  ),
                 ),
-                child: const Icon(Icons.add, color: Colors.white, size: 26),
-              ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _addConstraint,
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ModernTheme.iosBlue.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 26),
+                  ),
+                ),
+              ],
             ),
+            if (_constraints.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: _constraints
+                    .asMap()
+                    .entries
+                    .map((e) => _buildConstraintChip(e.value, e.key))
+                    .toList(),
+              ),
+            ],
           ],
-        ),
-        if (_constraints.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: _constraints
-                .asMap()
-                .entries
-                .map((e) => _buildConstraintChip(e.value, e.key))
-                .toList(),
-          ),
-        ],
-      ],
-    )
+        )
         .animate()
         .fadeIn(duration: 500.ms, delay: 200.ms)
         .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
@@ -363,9 +303,7 @@ class _NewCommitScreenState extends State<NewCommitScreen>
       decoration: BoxDecoration(
         color: ModernTheme.backgroundTertiary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: ModernTheme.iosBlue.withOpacity(0.2),
-        ),
+        border: Border.all(color: ModernTheme.iosBlue.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -403,13 +341,72 @@ class _NewCommitScreenState extends State<NewCommitScreen>
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Confidence Level',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ModernTheme.textSecondary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: confidenceColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: confidenceColor.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    '${_confidence.round()}%',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: confidenceColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SliderTheme(
+              data: SliderThemeData(
+                trackHeight: 8,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
+                activeTrackColor: confidenceColor,
+                inactiveTrackColor: ModernTheme.backgroundTertiary,
+                thumbColor: confidenceColor,
+                overlayColor: confidenceColor.withOpacity(0.2),
+              ),
+              child: Slider(
+                value: _confidence,
+                min: 0,
+                max: 100,
+                onChanged: (value) => setState(() => _confidence = value),
+              ),
+            ),
+          ],
+        )
+        .animate()
+        .fadeIn(duration: 500.ms, delay: 300.ms)
+        .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
+  }
+
+  Widget _buildVoiceNoteSection() {
+    return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Confidence Level',
+              'Voice Note',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -417,208 +414,52 @@ class _NewCommitScreenState extends State<NewCommitScreen>
                 letterSpacing: -0.3,
               ),
             ),
+            const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: confidenceColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
+                color: ModernTheme.backgroundSecondary,
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: confidenceColor.withOpacity(0.3),
+                  color: ModernTheme.textTertiary.withOpacity(0.2),
                 ),
               ),
-              child: Text(
-                '${_confidence.round()}%',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: confidenceColor,
-                ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.mic_off_outlined,
+                    size: 48,
+                    color: ModernTheme.textTertiary.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    kIsWeb
+                        ? 'Voice recording unavailable on web'
+                        : 'Voice recording feature',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: ModernTheme.textTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    kIsWeb
+                        ? 'Use mobile app for voice notes'
+                        : 'Coming soon in mobile version',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: ModernTheme.textTertiary.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 16),
-        SliderTheme(
-          data: SliderThemeData(
-            trackHeight: 8,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
-            activeTrackColor: confidenceColor,
-            inactiveTrackColor: ModernTheme.backgroundTertiary,
-            thumbColor: confidenceColor,
-            overlayColor: confidenceColor.withOpacity(0.2),
-          ),
-          child: Slider(
-            value: _confidence,
-            min: 0,
-            max: 100,
-            onChanged: (value) => setState(() => _confidence = value),
-          ),
-        ),
-      ],
-    )
-        .animate()
-        .fadeIn(duration: 500.ms, delay: 300.ms)
-        .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
-  }
-
-  Widget _buildVoiceNoteSection() {
-    // WEB VERSION - Voice recording not available
-    if (kIsWeb) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Voice Note',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: ModernTheme.textSecondary,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: ModernTheme.backgroundSecondary,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: ModernTheme.textTertiary.withOpacity(0.2),
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.mic_off_outlined,
-                  size: 48,
-                  color: ModernTheme.textTertiary.withOpacity(0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Voice recording unavailable on web',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: ModernTheme.textTertiary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Download the mobile app for voice notes',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: ModernTheme.textTertiary.withOpacity(0.7),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ],
-      )
-          .animate()
-          .fadeIn(duration: 500.ms, delay: 400.ms)
-          .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
-    }
-
-    // MOBILE VERSION - Full voice recording functionality
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Voice Note',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: ModernTheme.textSecondary,
-            letterSpacing: -0.3,
-          ),
-        ),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: _toggleRecording,
-          child: AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(28),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: _isRecording
-                        ? [
-                            ModernTheme.accentRed.withOpacity(
-                                0.25 + _pulseController.value * 0.15),
-                            ModernTheme.accentOrange.withOpacity(
-                                0.25 + _pulseController.value * 0.15),
-                          ]
-                        : [
-                            ModernTheme.iosBlue.withOpacity(0.15),
-                            ModernTheme.iosPurple.withOpacity(0.15),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _isRecording
-                        ? ModernTheme.accentRed.withOpacity(0.6)
-                        : ModernTheme.iosBlue.withOpacity(0.3),
-                    width: 2,
-                  ),
-                  boxShadow: _isRecording
-                      ? [
-                          BoxShadow(
-                            color: ModernTheme.accentRed.withOpacity(0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _isRecording ? Icons.stop_circle : Icons.mic_none,
-                      size: 56,
-                      color: _isRecording
-                          ? ModernTheme.accentRed
-                          : ModernTheme.iosBlue,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _isRecording
-                          ? 'Recording...'
-                          : _voiceNotePath != null
-                              ? '✓ Voice note saved'
-                              : 'Tap to record',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: _isRecording
-                            ? ModernTheme.accentRed
-                            : ModernTheme.textPrimary,
-                      ),
-                    ),
-                    if (!_isRecording && _voiceNotePath == null) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Capture your thoughts with voice',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: ModernTheme.textTertiary.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    )
+        )
         .animate()
         .fadeIn(duration: 500.ms, delay: 400.ms)
         .slideY(begin: 0.1, end: 0, curve: Curves.easeOut);
@@ -626,52 +467,52 @@ class _NewCommitScreenState extends State<NewCommitScreen>
 
   Widget _buildSaveButton() {
     return GestureDetector(
-      onTap: _saving ? null : _saveCommit,
-      child: Container(
-        width: double.infinity,
-        height: 64,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
-          ),
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: ModernTheme.iosBlue.withOpacity(0.5),
-              blurRadius: 25,
-              offset: const Offset(0, 12),
-            ),import '../services/voice_service.dart';
-          ],
-        ),
-        child: Center(
-          child: _saving
-              ? const SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 3,
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'Commit Decision',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,import '../services/voice_service.dart';
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Icon(Icons.check_circle, color: Colors.white, size: 22),
-                  ],
+          onTap: _saving ? null : _saveCommit,
+          child: Container(
+            width: double.infinity,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [ModernTheme.iosBlue, ModernTheme.iosPurple],
+              ),
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: ModernTheme.iosBlue.withOpacity(0.5),
+                  blurRadius: 25,
+                  offset: const Offset(0, 12),
                 ),
-        ),
-      ),
-    )
+              ],
+            ),
+            child: Center(
+              child: _saving
+                  ? const SizedBox(
+                      width: 26,
+                      height: 26,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Commit Decision',
+                          style: TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Icon(Icons.check_circle, color: Colors.white, size: 22),
+                      ],
+                    ),
+            ),
+          ),
+        )
         .animate()
         .fadeIn(duration: 500.ms, delay: 600.ms)
         .slideY(begin: 0.2, end: 0, curve: Curves.easeOut)
